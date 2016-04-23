@@ -25,24 +25,7 @@
 
       var server = "http://eonet.sci.gsfc.nasa.gov/api/v2.1";
 
-      function attachPolygonInfoWindow(polygon, html){
-        polygon.infoWindow = new google.maps.InfoWindow({
-          content: html,
-        });
-        google.maps.event.addListener(polygon, 'click', function(e) {
-          var latLng = e.latLng;
-          this.setOptions({fillOpacity:0.1});
-          polygon.infoWindow.setPosition(latLng);
-          polygon.infoWindow.open(map);
-          console.log(html);
-        });
-        google.maps.event.addListener(polygon, 'mouseout', function() {
-          this.setOptions({fillOpacity:0.35});
-          polygon.infoWindow.close();
-        });
-      }
-
-
+      
       function initMap() {
 
       var myLatLng = {lat: 33.629, lng: -117.949};
@@ -52,6 +35,9 @@
           center: myLatLng
         });
 
+        var infowindow = new google.maps.InfoWindow({
+                size: new google.maps.Size(150, 50)
+              });
 
        $.getJSON( server + "/events", {
             status: "open",
@@ -110,9 +96,15 @@
                         title: myTitle
                       });
 
-                      attachPolygonInfoWindow(bermudaTriangle, '<strong>Info about this area</strong>');
+                      google.maps.event.addListener(bermudaTriangle, 'click', function(event) {
+                        var contentString = "Event:" + myTitle + "<br>" + event.latLng.toUrlValue(6);
+                        infowindow.setContent(contentString);
+                        infowindow.setPosition(event.latLng);
+                        infowindow.open(map);
+                      });
 
-                      bermudaTriangle.setMap(map);
+                    
+                    bermudaTriangle.setMap(map);
 
                     }
                 });
