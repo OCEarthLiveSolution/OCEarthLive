@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Simple Map</title>
+    <title>OC Earth Live</title>
+
     <meta name="viewport" content="initial-scale=1.0">
+    <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+
     <meta charset="utf-8">
     <style>
       html, body {
@@ -19,21 +22,68 @@
     <div id="map"></div>
     <script>
       var map;
+
+      var server = "http://eonet.sci.gsfc.nasa.gov/api/v2.1";
+
+    // First, show the list of events
+    $(document ).ready(function() {
+        $.getJSON( server + "/events", {
+            status: "open",
+            limit: 20
+        })
+            .done(function( data ) {
+                $.each( data.events, function( key, event ) {
+                    alert(event);
+                });
+            });
+    });
+
       function initMap() {
+
+
         
         var myLatLng = {lat: 33.629, lng: -117.949};
-
+        
         var map = new google.maps.Map(document.getElementById('map'), {
-          zoom: 15,
+          zoom: 2,
           center: myLatLng
         });
 
-        var marker = new google.maps.Marker({
-          position: myLatLng,
-          map: map,
-          title: 'Hello World!'
-        });
 
+       $.getJSON( server + "/events", {
+            status: "open",
+            limit: 20
+        })
+            .done(function( data ) {
+                $.each( data.events, function( key, event ) {
+
+                    if (event.geometries[0].type == 'Point'){
+
+                      var myPoint = {};
+                      myPoint.lat = parseFloat(event.geometries[0].coordinates[0]);
+                      myPoint.lng = parseFloat(event.geometries[0].coordinates[1]);
+                      var myTitle = JSON.stringify(event.categories[0].title);
+
+                      console.log(JSON.stringify(event.geometries[0].coordinates[0]));
+                      console.log(JSON.stringify(event.geometries[0].coordinates[1]));
+                      console.log(JSON.stringify(event.categories[0].title));
+
+                      var marker = new google.maps.Marker({
+                          position: myPoint,
+                          map: map,
+                          title: "Hi"
+                        });
+                      marker.title = myTitle;
+                        // To add the marker to the map, call setMap();
+                        marker.setMap(map);
+
+
+                    }
+                });
+            });
+ 
+ 
+ 
       }
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCmYvnjnsFJEJ2ZnL8adoadKRWOD_euQXc&callback=initMap"
