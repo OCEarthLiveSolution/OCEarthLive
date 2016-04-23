@@ -38,26 +38,72 @@
 
         var infowindow = new google.maps.InfoWindow({
                 size: new google.maps.Size(150, 50)
-              });
+        });
 
         function addInfoBox(myId, myTitle, myCategory, event){
-            var contentString = "Id: " + myId + "<br/>Event: " + myTitle + "<br/>Category: " + myCategory + "<br/>Location: " + event.latLng.toUrlValue(6);
+            
+            var contentString = "";
+            
+            if (myId != undefined){
+              contentString += "Id: " + myId;
+            }
+            if (myTitle != undefined){
+              contentString += "<br/>Event: " + myTitle;
+            }
+            if (myCategory != undefined){
+              contentString += "<br/>Category: " + myCategory ;
+            }
+            if (event != undefined){
+              contentString += "<br/>Location: " + event.latLng.toUrlValue(6);
+            }
+
             infowindow.setContent(contentString);
             infowindow.setPosition(event.latLng);
             infowindow.open(map);
         }
 
-        //Get the Tweets 
+        
+        //Get the Tweets from our server
         $.getJSON( tweetServer, {
             status: "open",
             limit: 200
         })
         .done(function( data ) {
-          console.log(data);
+          $.each(data._items, function(key, event){
+
+            var myId = JSON.stringify(event.eonet_id);
+            var myTitle = JSON.stringify(event.name);
+
+            console.log(myId);
+            console.log(myTitle);
+            console.log(JSON.parse(event.json_coordinates).coordinates);
+            
+            var myPoint = {};
+            myPoint.lat = parseFloat(JSON.parse(event.json_coordinates).coordinates[1]);
+            myPoint.lng = parseFloat(JSON.parse(event.json_coordinates).coordinates[0]);
+            
+            var pinColor = "00FFFF";
+          var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
+        new google.maps.Size(21, 34),
+        new google.maps.Point(0,0),
+        new google.maps.Point(10, 34));
+
+            var marker = new google.maps.Marker({
+                position: myPoint,
+                map: map,
+                title: myTitle,
+                icon: pinImage
+              });
+
+            google.maps.event.addListener(marker, 'click', function(event) {
+              addInfoBox(myId, myTitle, undefined, event);
+            });
+
+            marker.setMap(map);
+          });
        });
 
-
-       //Get the 
+       //Get the events from the EONET Server
        $.getJSON( server + "/events", {
             status: "open",
             limit: 200
