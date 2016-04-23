@@ -1,0 +1,54 @@
+'''
+Created on Apr 21, 2016
+
+@author: neil
+'''
+import tweepy
+from config import (ACCESS_TOKEN, ACCESS_TOKEN_SECRET,
+                    CONSUMER_KEY, CONSUMER_SECRET)
+
+class TweetConsumer(object):
+    
+    def process(self, tweets):
+        pass
+
+class StdOutConsumer(TweetConsumer):
+    
+    def process(self, tweets):
+        for tweet in tweets:
+            print tweet
+        
+
+if __name__ == '__main__':
+    
+    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+    
+    api = tweepy.API(auth)
+    consumer = StdOutConsumer()
+    
+#    query = 'Tropical Storm Twenty'
+    query = 'flooding in houston texas'
+    max_tweets = 100
+    
+#    searched_tweets = []
+    last_id = -1
+#    while len(searched_tweets) < max_tweets:
+    count = 0
+    while count < max_tweets:
+#        count = max_tweets - len(searched_tweets)
+
+        try:
+            new_tweets = api.search(q=query, count=count, max_id=str(last_id - 1))
+            if not new_tweets:
+                break
+#            searched_tweets.extend(new_tweets)
+            count += len(new_tweets)
+            consumer.process(new_tweets)
+            
+            last_id = new_tweets[-1].id
+        except tweepy.TweepError as e:
+            # depending on TweepError.code, one may want to retry or wait
+            # to keep things simple, we will give up on an error
+            print e
+            break

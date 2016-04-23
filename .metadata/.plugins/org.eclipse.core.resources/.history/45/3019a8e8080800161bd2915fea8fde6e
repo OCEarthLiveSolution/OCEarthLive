@@ -1,0 +1,25 @@
+'''
+Created on Apr 21, 2016
+
+@author: neil
+'''
+import string
+import json
+import urllib2
+from config import EONET_URL
+
+
+class EONet(object):
+    '''
+    Object to contain the EONet events
+    '''
+    def __init__(self):
+        self.events = json.load(urllib2.urlopen(EONET_URL))
+        print('Loaded EONet data: %s.' % self.events['description'])
+        self.__make_table()
+        
+    def __make_table(self):
+        for event in self.events:
+            hashtag = string.capwords(event['title'])
+            print('Found %s.' % hashtag)
+            

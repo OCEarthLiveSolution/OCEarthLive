@@ -1,0 +1,29 @@
+'''
+Created on Apr 22, 2016
+
+@author: neil
+'''
+from threading import Thread
+from eve import Eve
+from eve_sqlalchemy import SQL
+from eve_sqlalchemy.validation import ValidatorSQL
+from eve_sqlalchemy.decorators import registerSchema
+from database import DBTweets, Base
+
+
+class TweetRestAPI(Thread):
+    '''
+    Listens for REST calls and gives everything that is in the database.
+    '''
+    registerSchema('tweets')(DBTweets)
+    DOMAIN = {
+        'tweets': DBTweets._eve_schema['tweets']
+        }
+
+    def run(self):
+        app = Eve(validator=ValidatorSQL, data=SQL)
+        
+        # Bind SQLAlchemy to Sqlite3
+        db = app.data.driver
+        Base.metadata.bind = db.engine
+        db.Model = Base

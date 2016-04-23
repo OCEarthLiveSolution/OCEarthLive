@@ -1,0 +1,13 @@
+'''
+Created on Apr 21, 2016
+
+@author: neil
+'''
+from twitter_search import search_tweets
+
+
+def main():
+    search_tweets()
+    
+if __name__ == '__main__':
+    main()

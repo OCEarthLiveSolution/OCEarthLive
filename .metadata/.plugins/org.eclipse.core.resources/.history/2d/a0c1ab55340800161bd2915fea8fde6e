@@ -1,0 +1,55 @@
+'''
+Created on Apr 21, 2016
+
+@author: neil
+'''
+from threading import Thread
+from twitter_search import search_tweets
+from twitter_streaming import monitor_tweets
+from EONet_json import EONet
+
+
+class TweetMonitor(Thread):
+
+    def __init__(self, eonet):
+        Thread.__init__(self)
+        self.__eonet = eonet
+
+    def run(self):
+        monitor_tweets(self.__eonet)
+    
+
+def main():
+    '''
+    Does a search through past tweets on the titles in the EONet JSON, and then
+    filtering by tweets with geodata and the geolocation within the polygon
+    given in the EONet JSON.  These are persisted to a SQLite database.
+    '''
+    eonet = EONet()
+    
+    # Grab all the recent tweets.  This is done before monitoring the Twitter
+    # stream or listening for REST requests.
+    search_tweets(eonet)
+    
+    # A semiphore for policing read/writes to the same store.  Serialize the
+    # the connections to the store just to be extra safe.
+#    maxconnections = 1
+#    pool_sema = BoundedSemephone(value=maxconnections)
+ 
+    monitor_thread = TweetMonitor(eonet)
+    monitor_thread.setName('monitor tweets')
+    monitor_thread.start()
+#    monitor_tweets(eonet)
+    
+if __name__ == '__main__':
+    '''
+    Run the main program.  Catch a Ctrl-C and shutdown if entered at the
+    keyboard.
+    '''
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('Ctrl-C from keyboard.  Shutting down.')
+    except Exception as err:
+        print('Exception: %s' % (err))
+        raise

@@ -1,0 +1,6 @@
+'''
+Created on Apr 22, 2016
+
+@author: neil
+'''
+DOMAIN = {'people': {}}

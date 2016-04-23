@@ -1,0 +1,167 @@
+'''
+Created on Apr 21, 2016
+
+@author: neil
+'''
+import json
+from osgeo import ogr
+from EONet_json import EONet
+from database import DBEONet, DBTweets, DBPhotos, DBSession
+
+
+class TweetConsumer(object):
+    '''
+    Consumes the results of a Twitter search.  To use this class, create a
+    subclass and implement the _save() method.
+    '''
+
+    # Counters, so we can gauge if it's working.
+    title_matches = 0
+    geo_enabled_matches = 0
+    geo_matches = 0
+    
+    def __is_close(self, p1, p2):
+        '''
+        Determines if the points p1 and p2 are close enough to qualify as a
+        match.  Currently not supported.
+        '''
+        separation = p1.Distance(p2) 
+        return False
+
+    def __in_polygons(self, point):
+        '''
+        Determines if the point is in one of the polygons or near one of the
+        points associated with a hashtag.  If true, then returns the hashtag.
+        If false, returns None.
+        '''
+        hashtag = self.__hashtag_table.get_hashtag_from_point(point)
+        return hashtag
+#        for hashtag, geometries in self.__hashtag_table.items():
+#            for geometry in geometries:
+#                
+#                geotype = geometry.GetGeometryName()
+#                if 'POLYGON' == geotype:
+#                    if point.Within(geometry):
+#                        return hashtag
+#                if 'POINT' == geotype:
+#                    if __is_close(point, geometry):
+#                        return hashtag
+#
+#        return None
+
+    def __filter(self, tweet):
+        '''
+        Checks for the presence of geodata and if the coordinates are near
+        the EONet event.  If yes to both, then returns True.
+        '''
+        self.title_matches += 1
+        hashtag = None
+        if tweet.coordinates is not None:
+            self.geo_enabled_matches += 1
+            geojson_point = json.dumps(tweet.coordinates)
+            point = ogr.CreateGeometryFromJson(geojson_point)
+            hashtag = self.__in_polygons(point)
+            
+        if hashtag is not None:
+            self.geo_matches += 1
+
+        return hashtag
+
+    # The geometries can be either OGR Points or OGR Polygons.  At this point
+    # in the execution the geometries are turned into these objects, so that
+    # it's done just one rather than for every tweet.
+    #
+    # The structure looks like this:
+    # {
+    #  hashtag1: [(type, geometry), ...],
+    #  ...
+    # }
+    def set_search_table(self, tbl):
+#        '''Builds the table of hashtags and geometries.'''
+#        for hashtag, geometries in tbl.items():
+#            ogr_geoms = []
+#            for geometry in geometries:
+#                geo_json = json.dumps(geometry)
+#                ogr_geom = ogr.CreateGeometryFromJson(geo_json)
+#                ogr_geoms.append(ogr_geom)
+#            self.__hashtag_table[hashtag] = ogr_geoms
+        self.__hashtag_table = tbl
+
+    def reset_counters(self):
+        '''Sets the number of title and geo matches to zero.'''
+        self.title_matches = 0
+        self.geo_matches = 0
+        self.geo_enabled_matches = 0
+
+    def process(self, tweets):
+        '''
+        Iterate through the tweets, filtering out the relevant ones and then
+        send them to a save method.
+        '''
+        for tweet in tweets:
+            hashtag = self.__filter(tweet)
+            if hashtag is not None:
+                self._save(tweet, hashtag)
+
+
+# This class is useful for initial development and detailed debugging.
+class RawDump(TweetConsumer):
+    '''Dumps the tweet, in raw json, to standard out.'''
+    def _save(self, tweet, hashtag=None):
+        print tweet
+
+
+# This class presents refined output to standard out.  It's useful for
+# high-level troubleshooting. 
+class PrettyDump(TweetConsumer):
+        '''
+        Presents the most interesting parts of a tweet in formatted text to
+        standard out.
+        '''
+        def _save(self, tweet, hashtag=None):
+            msg = tweet.text.encode('utf8', 'replace')
+            name = tweet.user.name.encode('utf8', 'replace')
+            msg_date = tweet.created_at
+            if tweet.place is not None:
+                place = tweet.place.name.encode('utf8', 'replace')
+            else:
+                place = 'Unknown'
+            print('Written to the database.  [Name: %s][Place: %s][At: %s] %s' %
+                  (name, place, msg_date, msg))
+
+
+# This class saves the tweets to a Sqlite database.
+class SQLDump(TweetConsumer):
+    '''
+    Saves the parts of the tweet that the REST API requires to a database.
+    '''
+    def __init__(self):
+        self.__session = DBSession().session()
+
+    def _save(self, tweet, hashtag=None):
+        
+        # Obtain the event from the database.
+        event = DBEONet.event_by
+        
+        # the data fields to save.
+        name = tweet.user.name
+        create_date = tweet.created_at
+        place = tweet.place.name if tweet.place else None
+        text = tweet.text
+            
+        # Commit to the database.
+        tweet_record = DBTweets(eonet_id=event.eonet_id,
+                                name=name,
+                                createDate=create_date,
+                                place=place,
+                                msg=text)
+        self.__session.add(tweet_record)
+        self.__session.commit()
+                
+        # Write the same to standard out to monitor the progress.  The terminal
+        # requires the text to be encoded as utf8.
+        text = text.encode('utf8', 'replace')
+        name = name.encode('utf8', 'replace')
+        place = place.encode('utf8', 'replace') if place else None
+        print('Saved to the database: (Name: %s)(Place: %s)(At: %s) %s.' %
+              (name, place, create_date, text))

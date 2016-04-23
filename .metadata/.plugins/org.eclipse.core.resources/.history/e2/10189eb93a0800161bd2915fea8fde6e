@@ -1,0 +1,59 @@
+'''
+Created on Apr 22, 2016
+
+@author: neil
+'''
+from sqlalchemy.ext.declarative import declarative_base
+#from sqlalchemy.ext.hybrid import hybrid_property
+#from sqlalchemy.orm import column_property, relationship
+from sqlalchemy import func
+from sqlalchemy import (
+    Column,
+    String,
+#    Integer,
+#    ForeignKey,
+    DateTime,
+    DECIMAL)
+from eve_sqlalchemy.decorators import registerSchema
+
+from eve import Eve
+from eve_sqlalchemy import SQL
+from eve_sqlalchemy.validation import ValidatorSQL
+
+
+Base = declarative_base()
+
+
+class TweetRestAPI(Thread):
+    '''
+    Listens for REST calls and gives everything that is in the database.
+    '''
+    def run(self):
+        app = Eve(validator=ValidatorSQL, data=SQL)
+        
+        # Bind SQLAlchemy to Sqlite3
+        db = app.data.driver
+        Base.metadata.bind = db.engine
+        db.Model = Base
+    
+
+class CommonColumns(Base):
+    __abstract__ = True
+    _created = Column(DateTime, default=func.now())
+    _updated = Column(DateTime, default=func.now(), onupdate=func.now())
+    _etag = Column(String(40))
+
+class DBTweets(CommonColumns):
+    __tablename__ = 'Tweet'
+    eonet_id = Column(String, primary_key=True)
+    name = Column(String(50))
+    createDate  = Column(DateTime)
+    place = Column(String(50))
+    text = Column(String(140))
+    longitude = Column(DECIMAL(asdecimal=False), default=0.0)
+    latitude = Column(DECIMAL(asdecimal=False), default=0.0)    
+
+registerSchema('tweets')(DBTweets)
+DOMAIN = {
+    'tweets': DBTweets._eve_schema['tweets']
+    }

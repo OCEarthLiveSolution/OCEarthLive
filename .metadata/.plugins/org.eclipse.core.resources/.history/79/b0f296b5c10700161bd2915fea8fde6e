@@ -1,0 +1,79 @@
+'''
+Created on Apr 21, 2016
+
+@author: neil
+'''
+import json
+import tweepy
+from config import (ACCESS_TOKEN, ACCESS_TOKEN_SECRET,
+                    CONSUMER_KEY, CONSUMER_SECRET)
+
+
+class TweetFetcher(object):
+    
+    consumer = None
+    
+    __max_tweets = 100
+    
+    def __init__(self, api, q):
+        self.__api = api
+        self.__query = q
+        
+    def fetch(self):
+        last_id = -1
+        count = 0
+        while count < self.__max_tweets:
+    
+            try:
+                new_tweets = self.__api.search(q=self.__query, count=count, max_id=str(last_id - 1))
+                if not new_tweets:
+                    break
+                count += len(new_tweets)
+                self.consumer.process(new_tweets)
+                
+                last_id = new_tweets[-1].id
+            except tweepy.TweepError as e:
+                # depending on TweepError.code, one may want to retry or wait
+                # to keep things simple, we will give up on an error
+                print e
+                break        
+
+
+class TweetConsumer(object):
+    
+    def process(self, tweets):
+        pass
+        
+
+class RawDump(TweetConsumer):
+    
+    def process(self, tweets):
+        for tweet in tweets:
+            print tweet
+
+
+class PrettyStdOut(TweetConsumer):
+    
+        def process(self, tweets):
+            for tweet in tweets:
+                msg = tweet['text']
+                user = tweet['user']
+                name = user['name']
+                geo_enabled = user['geo_enabled']
+                print('%s [Geoenabled: %s]: %s' % (name, geo_enabled, msg))
+
+
+def hasgeodata(tweet):
+    
+    return (tweet.geo is not None)
+
+if __name__ == '__main__':
+    
+    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+    
+    api = tweepy.API(auth)
+    tweetfetcher = TweetFetcher(api, 'flooding in houston texas')
+    tweetfetcher.consumer = PrettyStdOut()
+    tweetfetcher.fetch()
+    

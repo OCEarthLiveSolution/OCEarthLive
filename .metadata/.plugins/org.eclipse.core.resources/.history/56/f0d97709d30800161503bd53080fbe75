@@ -1,0 +1,100 @@
+'''
+Created on Apr 21, 2016
+
+@author: neil
+'''
+import string
+import json
+import urllib2
+from osgeo import ogr
+from config import EONET_URL
+from database import DBEONet, DBSession
+
+
+class EONet(object):
+    '''
+    Object to contain the EONet events.  The event_id, a hashtag, the
+    geometries and the event title are being retained.
+    '''
+    def __init__(self):
+        self.__session = DBSession().session()
+        self.__events = self.__session.query(DBEONet).all()
+        
+        # Update, for good measure.
+        self.__update_table()
+
+    def __update_table(self):
+        '''
+        Makes a dictionary of geometries indexed by hashtags.  This supports
+        monitoring the Twitter stream by hashtag and checking the geolocation.
+        
+        The hashtag is formed from each title by removing punctuation, and then
+        combining the first three words.
+        '''
+        eonet = json.load(urllib2.urlopen(EONET_URL))
+        self.events = eonet['events']
+        print('Requested EONet data: "%s", %d events received.' %
+              (eonet['description'], len(eonet['events']))
+        )
+        
+        # Loop through the events saving them to the database.
+        for event in self.events:
+            
+            # Check if the event is already in the database.
+            eonet_id = self.__session.query(DBEONet).filter(DBEONet.eonet_id == event['id']).one_or_none()
+            if eonet_id is None:
+                self.__add_event(event)
+
+    def __add_event(self, event):
+        '''Add an EONet event to the database.'''
+        # Clean up the title, removing spaces, punctuation and meaningless
+        # words.
+        title = event['title']
+        exclude = set(string.punctuation)
+        title = ''.join(ch for ch in title if ch not in exclude)
+        wordlist = title.split()
+        hashlist = wordlist[:3]
+        
+        # Assemble the hashtag.
+        hashtag = '#'
+        for keyword in hashlist:
+            hashtag += keyword.capitalize()
+        
+        new = DBEONet(eonet_id = event['id'],
+                      title = title,
+                      hashtag = hashtag,
+                      geometries = repr(event['geometries'])
+                      )
+        self.__session.add(new)
+        self.__session.commit()
+        
+        print('Added "%s": %s (%s).' % (new.eonet_id, new.title, new.hashtag))
+
+    def refresh(self):
+        '''
+        Requests another JSON document of events from EONet and updates the
+        EONet table in the database.
+        '''
+        self.__update_table()
+
+    def get_hashtag_from_point(self, point):
+        results = self.__session.query(DBEONet.hashtag, DBEONet.geometries)
+        for result in results:
+            geometries = ogr.CreateGeometryFromJson(rec.geometries)
+            for geometry in geometries:
+                geotype = geometry.GetGeometryName()
+                if 'POLYGON' == geotype:
+                    if point.Within(geometry):
+                        return rec.hashtag
+#                if 'POINT' == geotype:
+#                    if __is_close(point, geometry):
+#                        return rec.hashtag
+        return None
+
+    def hashtags(self):
+        hashtags = []
+        results = self.__session.query(DBEONet.hashtag)
+        for result in results:
+            hashtag = result[0].encode('utf8', 'replace')
+            hashtags.append(hashtag)
+        return hashtags

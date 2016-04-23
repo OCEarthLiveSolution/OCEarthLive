@@ -1,0 +1,59 @@
+'''
+Created on Apr 21, 2016
+
+@author: neil
+'''
+import json
+from tweepy.streaming import StreamListener
+from tweepy import OAuthHandler
+from tweepy import Stream
+
+from config import (ACCESS_TOKEN, ACCESS_TOKEN_SECRET,
+                    CONSUMER_KEY, CONSUMER_SECRET)
+from twitter_handlers import PrettyDump
+
+def isgeo_enabled(tweet):
+    if "u'geo_enabled" in tweet:
+        return tweet["u'geo_enabled"]
+    return False
+
+
+#This is a basic listener that just prints received tweets to stdout.
+#class StdOutListener(StreamListener):
+#
+#    def on_data(self, data):
+#        print data
+#        return True
+#
+#    def on_error(self, status):
+#        print status
+
+
+class MyListener(object):
+    
+    consumer = None
+     
+    def on_data(self, data):
+        tweet = json.loads(data)
+#        if isgeo_enabled(tweet):
+#        print tweet
+        self.consumer(tweet)
+        return True
+    
+    def on_error(self, status):
+        print status
+
+def monitor_tweets(eonet_events):
+
+    #This handles Twitter authentication and the connection to Twitter Streaming API
+#    l = StdOutListener()
+    l = MyListener()
+    auth = OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+    stream = Stream(auth, l)
+    
+    consumer = PrettyDump()
+    l.consumer = consumer
+
+    #This line filter Twitter Streams to capture data by the keywords: 'python', 'javascript', 'ruby'
+    stream.filter(track=['rockymountfire', 'python', 'javascript', 'ruby'])

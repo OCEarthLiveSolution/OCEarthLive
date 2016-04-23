@@ -1,0 +1,63 @@
+'''
+Created on Apr 22, 2016
+
+@author: neil
+'''
+import sqlite3
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, String, DateTime, DECIMAL
+
+
+class DBTweets(CommonColumns):
+    __tablename__ = 'Tweet'
+    eonet_id = Column(String, primary_key=True)
+    name = Column(String(50))
+    createDate  = Column(DateTime)
+    place = Column(String(50))
+    text = Column(String(140))
+    longitude = Column(DECIMAL(asdecimal=False), default=0.0)
+    latitude = Column(DECIMAL(asdecimal=False), default=0.0)  
+    
+    
+
+Base = declarative_base()
+
+
+# New database in memory and a tables to hold the EONet events and the tweets.
+db = sqlite3.connect(':memory:')
+cursor = db.cursor()
+
+#cursor.execute('''
+#    CREATE TABLE EONetEvent(
+#        eonet_id VARCHAR(20) PRIMARY KEY,
+#        title VARCHAR(50)
+#    )''')
+
+cursor.execute('''
+    CREATE TABLE Tweet(
+        eonet_id VARCHAR(20) PRIMARY KEY,
+        name VARCHAR(50),
+        createDate DATETIME,
+        place VARCHAR(50),
+        text VARCHAR(140),
+        latitude FLOAT,
+        longitude FLOAT
+    )''')
+
+db.commit()
+
+def add_tweet(tweet):
+    '''Add a tweet to the database.'''
+    cursor = db.cursor()
+    name = 'Joe'
+    createDate = '2016-04-20 00:00'
+    place = None
+    text = 'This is the first tweet'
+    longitude = 117.2
+    latitude = 30.2
+    cursor.execute('''
+        INSERT INTO Tweet(name, createDate, place, text, longitude, latitude)
+        VALUES(?, ?, ?, ?, ?, ?)
+    ''', (name, createDate, place, text, longitude, latitude))
+    db.commit()
+    

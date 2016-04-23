@@ -1,0 +1,32 @@
+'''
+Created on Apr 21, 2016
+
+@author: neil
+'''
+from twitter_search import search_tweets
+from twitter_streaming import monitor_tweets
+from EONet_json import EONet
+
+
+def main():
+    '''
+    Does a search through past tweets on the titles in the EONet JSON, and then
+    filtering by tweets with geodata and the geolocation within the polygon
+    given in the EONet JSON.  These are persisted to a SQLite database.
+    '''
+    eonet = EONet()
+#    search_tweets(eonet_events)
+#    monitor_tweets(eonet_events)
+    
+if __name__ == '__main__':
+    '''
+    Run the main program.  Catch a Ctrl-C and shutdown if entered at the
+    keyboard.
+    '''
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('Ctrl-C from keyboard.  Shutting down.')
+    except Exception as err:
+        print('Exception: %s' % (err))
+        raise
