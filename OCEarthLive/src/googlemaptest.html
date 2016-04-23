@@ -25,24 +25,27 @@
 
       var server = "http://eonet.sci.gsfc.nasa.gov/api/v2.1";
 
-    // // First, show the list of events
-    // $(document ).ready(function() {
-    //     $.getJSON( server + "/events", {
-    //         status: "open",
-    //         limit: 20
-    //     })
-    //         .done(function( data ) {
-    //             $.each( data.events, function( key, event ) {
-    //                 alert(event);
-    //             });
-    //         });
-    // });
+      function attachPolygonInfoWindow(polygon, html){
+        polygon.infoWindow = new google.maps.InfoWindow({
+          content: html,
+        });
+        google.maps.event.addListener(polygon, 'click', function(e) {
+          var latLng = e.latLng;
+          this.setOptions({fillOpacity:0.1});
+          polygon.infoWindow.setPosition(latLng);
+          polygon.infoWindow.open(map);
+          console.log(html);
+        });
+        google.maps.event.addListener(polygon, 'mouseout', function() {
+          this.setOptions({fillOpacity:0.35});
+          polygon.infoWindow.close();
+        });
+      }
+
 
       function initMap() {
 
-
-        
-        var myLatLng = {lat: 33.629, lng: -117.949};
+      var myLatLng = {lat: 33.629, lng: -117.949};
         
         var map = new google.maps.Map(document.getElementById('map'), {
           zoom: 2,
@@ -57,13 +60,14 @@
             .done(function( data ) {
                 $.each( data.events, function( key, event ) {
 
+                    var myTitle = JSON.stringify(event.categories[0].title);
+
                     if (event.geometries[0].type == 'Point'){
 
                       var myPoint = {};
-                      myPoint.lat = parseFloat(event.geometries[0].coordinates[0]);
-                      myPoint.lng = parseFloat(event.geometries[0].coordinates[1]);
-                      var myTitle = JSON.stringify(event.categories[0].title);
-
+                      myPoint.lat = parseFloat(event.geometries[0].coordinates[1]);
+                      myPoint.lng = parseFloat(event.geometries[0].coordinates[0]);
+                      
                       //console.log(JSON.stringify(event.categories[0].title));
 
                       var marker = new google.maps.Marker({
@@ -84,36 +88,36 @@
                     else if (event.geometries[0].type == 'Polygon'){
 
                       var allPolygons = event.geometries[0].coordinates[0];
-                      // $.each(event.geometries[0].coordinates[0], function(point)){
-                      //   console.log(point);
-                        
-                      // };
+
+                      var triangleCoords = [];  
+  
+                      $.each( allPolygons, function( index, value ){
+                          var coord = {lat: value[1], lng: value[0]};
+                          triangleCoords.push(coord);
+                          
+                      });
+                       
                       // console.log(JSON.stringify(event.categories[0].title));
+
+                      // Construct the polygon.
+                      var bermudaTriangle = new google.maps.Polygon({
+                        paths: triangleCoords,
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        fillColor: '#FF0000',
+                        fillOpacity: 0.35,
+                        title: myTitle
+                      });
+
+                      attachPolygonInfoWindow(bermudaTriangle, '<strong>Info about this area</strong>');
+
+                      bermudaTriangle.setMap(map);
 
                     }
                 });
             });
 
-                  // Define the LatLng coordinates for the polygon's path.
-            var triangleCoords = [
-              {lat: 25.774, lng: -80.190},
-              {lat: 18.466, lng: -66.118},
-              {lat: 32.321, lng: -64.757},
-              {lat: 25.774, lng: -80.190}
-            ];
-
-            // Construct the polygon.
-            var bermudaTriangle = new google.maps.Polygon({
-              paths: triangleCoords,
-              strokeColor: '#FF0000',
-              strokeOpacity: 0.8,
-              strokeWeight: 2,
-              fillColor: '#FF0000',
-              fillOpacity: 0.35
-            });
-            bermudaTriangle.setMap(map);
- 
- 
  
       }
     </script>
