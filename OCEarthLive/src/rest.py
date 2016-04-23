@@ -15,6 +15,7 @@ registerSchema('tweets')(DBTweets)
 
 SETTINGS = {
     'DEBUG': True,
+    'X_DOMAINS': '*',
     'SQLALCHEMY_DATABASE_URI': 'sqlite:////tmp/tweets.db',
     'DOMAIN': {
         'tweets': DBTweets._eve_schema['tweets'],
