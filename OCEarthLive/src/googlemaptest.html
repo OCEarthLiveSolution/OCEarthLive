@@ -25,12 +25,13 @@
 
       var server = "http://eonet.sci.gsfc.nasa.gov/api/v2.1";
 
+      var tweetServer = "http://0ed5f3fe.ngrok.io/tweets";
       
       function initMap() {
 
       var myLatLng = {lat: 33.629, lng: -117.949};
         
-        var map = new google.maps.Map(document.getElementById('map'), {
+      var map = new google.maps.Map(document.getElementById('map'), {
           zoom: 4,
           center: myLatLng
         });
@@ -46,9 +47,20 @@
             infowindow.open(map);
         }
 
+        //Get the Tweets 
+        $.getJSON( tweetServer, {
+            status: "open",
+            limit: 200
+        })
+        .done(function( data ) {
+          console.log(data);
+       });
+
+
+       //Get the 
        $.getJSON( server + "/events", {
             status: "open",
-            limit: 20
+            limit: 200
         })
             .done(function( data ) {
                 $.each( data.events, function( key, event ) {
