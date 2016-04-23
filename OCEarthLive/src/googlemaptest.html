@@ -25,18 +25,18 @@
 
       var server = "http://eonet.sci.gsfc.nasa.gov/api/v2.1";
 
-    // First, show the list of events
-    $(document ).ready(function() {
-        $.getJSON( server + "/events", {
-            status: "open",
-            limit: 20
-        })
-            .done(function( data ) {
-                $.each( data.events, function( key, event ) {
-                    alert(event);
-                });
-            });
-    });
+    // // First, show the list of events
+    // $(document ).ready(function() {
+    //     $.getJSON( server + "/events", {
+    //         status: "open",
+    //         limit: 20
+    //     })
+    //         .done(function( data ) {
+    //             $.each( data.events, function( key, event ) {
+    //                 alert(event);
+    //             });
+    //         });
+    // });
 
       function initMap() {
 
