@@ -1,0 +1,15 @@
+'''
+Created on Apr 21, 2016
+
+@author: neil
+'''
+import ConfigParser
+
+config = ConfigParser.ConfigParser()
+config.read('conf')
+
+# Twitter access keys and tokens.
+ACCESS_TOKEN = config['TWITTER']['access_token']
+ACCESS_TOKEN_SECRET = config['TWITTER']['access_token_secret']
+CONSUMER_KEY = ['TWITTER']['consumer_key']
+CONSUMER_SECRET = ['TWITTER']['consumer_secret']

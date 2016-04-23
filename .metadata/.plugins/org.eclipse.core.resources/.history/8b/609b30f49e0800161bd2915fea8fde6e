@@ -1,0 +1,47 @@
+'''
+Created on Apr 22, 2016
+
+@author: neil
+'''
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
+from sqlalchemy import MetaData
+from sqlalchemy import Column, Integer, String, DateTime, DECIMAL
+from sqlalchemy.orm import sessionmaker
+
+# Keep the database in memory.  It gets rebuilt on startup with new tweets
+# from a Twitter search.
+engine = create_engine('sqlite:///:memory:', echo=True)
+Base = declarative_base()
+meta = MetaData(bind=engine)
+
+
+class DBSession(object):
+    
+    def __init__(self):
+        self.session = sessionmaker(bind=engine)
+    
+    def session(self):
+        return self.session
+
+
+# Only one table holding the tweets is required.
+class DBTweets(Base):
+    __tablename__ = 'Tweet'
+    
+#    eonet_id = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50))
+    createDate  = Column(DateTime)
+    place = Column(String(50))
+    text = Column(String(140))
+    longitude = Column(DECIMAL(asdecimal=False), default=0.0)
+    latitude = Column(DECIMAL(asdecimal=False), default=0.0)
+    
+    def __repr__(self):
+        return 'Tweet: (Name: %s) (Created: %s) %s' % (self.name,
+                                                       self.createDate,
+                                                       self.text)
+        
+# Create an empty database.
+Base.metadata.create_all(engine)

@@ -1,0 +1,48 @@
+'''
+Created on Apr 21, 2016
+
+@author: neil
+'''
+import string
+import json
+import urllib2
+from config import EONET_URL
+
+CONNECTOR_WORDS = ['THE', 'AN', 'A', 'IN', 'OF']
+
+class EONet(object):
+    '''
+    Object to contain the EONet events
+    '''
+    def __init__(self):
+        eonet = json.load(urllib2.urlopen(EONET_URL))
+        self.events = eonet['events']
+        print('Loaded EONet data: %s, %d events loaded.' % (eonet['description'],
+                                                            len(eonet['events'])))
+
+        self.__make_table()
+        
+    def __make_table(self):
+        '''
+        Makes a hashtag from each title by removing punctuation, words with
+        little meaning like "in", "and", "the", etc., and then combines the
+        first three words.
+        '''
+        for event in self.events:
+            title = event['title']
+            
+            # Clean up the title, removing spaces, punctuation and meaningless
+            # words.
+            exclude = set(string.punctuation)
+            title = ''.join(ch for ch in title if ch not in exclude)
+            exclude = set(CONNECTOR_WORDS)
+            title = ''.join(ch for ch in title if ch.upper() not in exclude)  # FIX ME
+            wordlist = title.split()
+            hashlist = wordlist[:3]
+            
+            # Assemble the hashtab.
+            hashtag = '#'
+            for keyword in hashlist:
+                hashtag += keyword.capitalize()
+            print('Transformed %s int the hashtag %s.' % (title, hashtag))
+            

@@ -1,0 +1,10 @@
+'''
+Created on Apr 22, 2016
+
+@author: neil
+'''
+import sqlite2
+
+
+# Create a new SQLite3 database in memory
+db = sqlite2

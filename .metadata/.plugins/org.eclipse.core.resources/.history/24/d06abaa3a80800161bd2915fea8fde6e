@@ -1,0 +1,7 @@
+'''
+Created on Apr 22, 2016
+
+@author: neil
+'''
+DEBUG = True
+DOMAIN = {'people': {}}

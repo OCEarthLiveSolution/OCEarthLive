@@ -1,0 +1,42 @@
+'''
+Created on Apr 22, 2016
+
+@author: neil
+'''
+#from threading import Thread
+from eve import Eve
+from eve_sqlalchemy import SQL
+from eve_sqlalchemy.validation import ValidatorSQL
+from eve_sqlalchemy.decorators import registerSchema
+from database import DBTweets, Base
+
+
+registerSchema('tweets')(DBTweets)
+
+SETTINGS = {
+    'DEBUG': True,
+    'DOMAIN': {
+        'tweets': DBTweets._eve_schema['tweets']
+    }
+}
+
+def main():
+    app = Eve(validator=ValidatorSQL, data=SQL)
+    
+    # Bind SQLAlchemy to Sqlite3
+    db = app.data.driver
+    Base.metadata.bind = db.engine
+    db.Model = Base
+
+if __name__ == '__main__':
+    '''
+    Run the main program.  Catch a Ctrl-C and shutdown if entered at the
+    keyboard.
+    '''
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('Ctrl-C from keyboard.  Shutting down.')
+    except Exception as err:
+        print('Exception: %s' % (err))
+        raise

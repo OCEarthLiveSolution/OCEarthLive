@@ -1,0 +1,52 @@
+'''
+Created on Apr 22, 2016
+
+@author: neil
+'''
+import sqlite3
+
+con = sqlite3.connect('/tmp/tweets.db')
+
+with con:
+    cursor = con.cursor()
+    
+    # Tweet - parsed data from the tweet.
+    cursor.execute('''
+        DROP TABLE IF EXISTS Tweet
+    ''')
+    cursor.execute('''
+        CREATE TABLE Tweet(
+            tweet_id TEXT PRIMARY KEY,
+            eonet_id INTEGER FOREIGN KEY,
+            hashtag
+            name TEXT,
+            createDate TEXT,
+            place TEXT,
+            msg TEXT,
+            coordinates TEXT
+        )''')
+    
+    # EONet -- the EONet events.
+    cursor.execute('''
+        DROP TABLE IF EXISTS EONet
+    ''')
+    cursor.execute('''
+        CREATE TABLE EONet(
+            eonet_id TEXT PRIMARY KEY,
+            title TEXT
+        )''')
+    
+    # Photo -- photos attached to the tweets.
+    cursor.execute('''
+        DROP TABLE IF EXISTS Photo
+    ''')
+    cursor.execute('''
+        CREATE TABLE Photo(
+            photo_id INTEGER PRIMARY KEY,
+            tweet_id TEXT FOREIGN KEY,
+            media_url TEXT
+        )''')
+    
+    # Commit saves the changes.
+    con.commit()
+            
