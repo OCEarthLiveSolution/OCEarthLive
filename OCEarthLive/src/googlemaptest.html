@@ -31,13 +31,20 @@
       var myLatLng = {lat: 33.629, lng: -117.949};
         
         var map = new google.maps.Map(document.getElementById('map'), {
-          zoom: 2,
+          zoom: 4,
           center: myLatLng
         });
 
         var infowindow = new google.maps.InfoWindow({
                 size: new google.maps.Size(150, 50)
               });
+
+        function addInfoBox(myId, myTitle, myCategory, event){
+            var contentString = "Id: " + myId + "<br/>Event: " + myTitle + "<br/>Category: " + myCategory + "<br/>Location: " + event.latLng.toUrlValue(6);
+            infowindow.setContent(contentString);
+            infowindow.setPosition(event.latLng);
+            infowindow.open(map);
+        }
 
        $.getJSON( server + "/events", {
             status: "open",
@@ -46,8 +53,10 @@
             .done(function( data ) {
                 $.each( data.events, function( key, event ) {
 
-                    var myTitle = JSON.stringify(event.categories[0].title);
-
+                    var myId = JSON.stringify(event.id);
+                    var myTitle = JSON.stringify(event.title);
+                    var myCategory = JSON.stringify(event.categories[0].title);
+                    
                     if (event.geometries[0].type == 'Point'){
 
                       var myPoint = {};
@@ -62,12 +71,10 @@
                           title: myTitle
                         });
 
-                      // marker.addListener('click', function() {
-                      //   marker.title = myTitle;
-                      //   console.log(myTitle);
-                      // });
-                      // marker.title = myTitle;
-                      // // To add the marker to the map, call setMap();
+                      google.maps.event.addListener(marker, 'click', function(event) {
+                        addInfoBox(myId, myTitle, myCategory, event);
+                      });
+
                       marker.setMap(map);
                     }
 
@@ -97,10 +104,7 @@
                       });
 
                       google.maps.event.addListener(bermudaTriangle, 'click', function(event) {
-                        var contentString = "Event:" + myTitle + "<br>" + event.latLng.toUrlValue(6);
-                        infowindow.setContent(contentString);
-                        infowindow.setPosition(event.latLng);
-                        infowindow.open(map);
+                        addInfoBox(myId, myTitle, myCategory, event);
                       });
 
                     
@@ -109,8 +113,6 @@
                     }
                 });
             });
-
- 
       }
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCmYvnjnsFJEJ2ZnL8adoadKRWOD_euQXc&callback=initMap"
