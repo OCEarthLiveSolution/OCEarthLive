@@ -21,7 +21,7 @@ def main():
     # Search for recent tweets relating to the events provided by EONet.
     # This is done before monitoring the Twitter stream or listening for REST
     # requests.
-    search_tweets(eonet)
+#    search_tweets(eonet)
     
  
     # Monitor the Twitter live stream for tweets relating to the EONet events.

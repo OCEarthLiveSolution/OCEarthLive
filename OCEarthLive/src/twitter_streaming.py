@@ -49,3 +49,4 @@ def monitor_tweets(eonet):
     print('Listining to Twitter Stream, filtering on these keywords:')
     print hashtags
     stream.filter(track=hashtags)
+#    stream.filter(track=['#EONET_376'])

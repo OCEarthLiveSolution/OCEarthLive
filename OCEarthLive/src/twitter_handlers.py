@@ -8,7 +8,7 @@ from osgeo import ogr
 from EONet_json import EONet
 from database import DBEONet, DBTweets, DBPhotos, DBSession, PythonDBObject
 
-    
+
 def place_centroid(tweet):
     '''
     Returns the centroid of the bounding box of the place of the tweet.
@@ -62,6 +62,14 @@ class TweetConsumer(object):
         '''
         self.title_matches += 1
         hashtag = None
+        
+        # If the hashtag matches the EONET ID, accept it unconditionally.
+        records = self.__hashtag_table.records()
+        for record in records:
+            eohash = '#'+record.eonet_id
+            if eohash in tweet.text:
+                hashtag = record.hashtag
+                return hashtag
         
         # Use the price coordinates first.  This is a point.
         if tweet.coordinates is not None:
@@ -171,7 +179,9 @@ class SQLDump(TweetConsumer):
         if tweet.coordinates is not None:
             coordinates = PythonDBObject(tweet.coordinates)
             json_coordinates = json.dumps(tweet.coordinates)
-        else:
+
+        # Second choice is the centroid of the place
+        elif tweet.place is not None:
             center = place_centroid(tweet)
             
             # Build the dictionary.
@@ -180,6 +190,25 @@ class SQLDump(TweetConsumer):
             coordinates = PythonDBObject(d_coords)
             json_coordinates = json.dumps(d_coords)
 
+        # Use the centroid of the event if we have that.
+        elif hashtag is not None:
+            e_json = event.json_geometries
+            f_json = str(e_json)
+            g_json = f_json[1:-1]
+            ogr_geometry = ogr.CreateGeometryFromJson(g_json)
+            geotype = ogr_geometry.GetGeometryName
+            if 'Point' == geotype:
+                coordinates = PythonDBObject(g_json)
+                json_coordinates =g_json
+            else:
+                center = ogr_geometry.Centroid()
+
+                # Build the dictionary.
+                l_coords = [center.GetX(), center.GetY()]
+                d_coords = {u'type': 'Point', u'coordinates': l_coords}
+                coordinates = PythonDBObject(d_coords)
+                json_coordinates = json.dumps(d_coords)
+                
         # Commit to the database.
         tweet_record = DBTweets(tweet_id=tweet.id_str,
                                 eonet_id=event.eonet_id,

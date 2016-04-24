@@ -172,6 +172,13 @@ class EONet(object):
         # If nothing's found, return None.
         return None
     
+    def point_from_hashtag(self, hashtag):
+        '''
+        Returns a point given a hashtag.
+        '''
+        json_geometry = self.__session.query(DBEOnet.json_geometry).filter(DBEOnet.hashtag == hashtag).one_or_none()
+        return json_geometry
+    
     def records(self):
         '''
         Returns the complete list of events (eonet_id, title), as a list of
@@ -189,5 +196,9 @@ class EONet(object):
         results = self.__session.query(DBEONet.hashtag)
         for result in results:
             hashtag = result[0].encode('utf8', 'replace')
+            hashtags.append(hashtag)
+        results = self.__session.query(DBEONet.eonet_id)
+        for result in results:
+            hashtag = '#'+result[0].encode('utf8', 'replace')
             hashtags.append(hashtag)
         return hashtags
