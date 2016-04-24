@@ -5,6 +5,9 @@
 
     <meta name="viewport" content="initial-scale=1.0">
     <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <!-- OpenLayers -->
+    <script src="http://openlayers.org/en/v3.8.2/build/ol.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="http://openlayers.org/en/v3.8.2/css/ol.css" type="text/css">
 
     <meta charset="utf-8">
     <style>
@@ -16,6 +19,17 @@
       #map {
         height: 100%;
       }
+
+        .selections {
+        width: 600px;
+        float: left;
+      }
+        .map {
+            height: 400px;
+            width: 400px;
+            float: left;
+        }
+
     </style>
   </head>
   <body>
@@ -29,10 +43,10 @@
       
       function initMap() {
 
-      var myLatLng = {lat: 33.629, lng: -117.949};
+      var myLatLng = {lat: 33.697998, lng: -117.846868};
         
       var map = new google.maps.Map(document.getElementById('map'), {
-          zoom: 4,
+          zoom: 3,
           center: myLatLng
         });
 
@@ -41,7 +55,6 @@
         });
 
         function getPinImage(pinColor){
-            console.log(pinColor);
             var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
             new google.maps.Size(21, 34),
             new google.maps.Point(0,0),
@@ -50,18 +63,27 @@
             return pinImage;
         }
 
-        function addInfoBox(myId, myTitle, myCategory, event){
+        function addInfoBox(id, title, category, tweeter, tweet, image, event){
             
             var contentString = "";
             
-            if (myId != undefined){
-              contentString += "Id: " + myId;
+            if (id != undefined){
+              contentString += "Id: " + id;
             }
-            if (myTitle != undefined){
-              contentString += "<br/>Event: " + myTitle;
+            if (title != undefined){
+              contentString += "<br/>Event: " + title;
             }
-            if (myCategory != undefined){
-              contentString += "<br/>Category: " + myCategory ;
+            if (category != undefined){
+              contentString += "<br/>Category: " + category ;
+            }
+            if (tweeter != undefined){
+              contentString += "<br/>Tweeted by " + tweeter ;
+            }
+            if (tweet != undefined){
+              contentString += "<br/>Tweet: " + tweet;
+            }
+            if (image != undefined){
+              contentString += "<br/><img src=" + image + "/>" ;
             }
             if (event != undefined){
               contentString += "<br/>Location: " + event.latLng.toUrlValue(6);
@@ -82,7 +104,12 @@
           $.each(data._items, function(key, event){
 
             var myId = JSON.stringify(event.eonet_id);
-            var myTitle = JSON.stringify(event.name);
+            var name = JSON.stringify(event.name);
+            var profilePic = JSON.stringify(event.profile_pic);
+            console.log(profilePic)
+            var tweeter = "<img border=\"0\" src=\""+ profilePic +"\"/> " + name;
+            var tweet = JSON.stringify(event.msg);
+            var image = JSON.stringify(event.media_url);
 
             var myPoint = {};
             myPoint.lat = parseFloat(JSON.parse(event.json_coordinates).coordinates[1]);
@@ -91,12 +118,12 @@
             var marker = new google.maps.Marker({
                 position: myPoint,
                 map: map,
-                title: myTitle,
+                title: name,
                 icon: getPinImage("00FFFF")
               });
 
             google.maps.event.addListener(marker, 'click', function(event) {
-              addInfoBox(myId, myTitle, undefined, event);
+              addInfoBox(myId, undefined, undefined, tweeter, tweet, image, event);
             });
 
             marker.setMap(map);
@@ -131,7 +158,7 @@
                         });
 
                       google.maps.event.addListener(marker, 'click', function(event) {
-                        addInfoBox(myId, myTitle, myCategory, event);
+                        addInfoBox(myId, myTitle, myCategory, undefined, undefined, undefined, event);
                       });
 
                       marker.setMap(map);
@@ -163,7 +190,7 @@
                       });
 
                       google.maps.event.addListener(bermudaTriangle, 'click', function(event) {
-                        addInfoBox(myId, myTitle, myCategory, event);
+                        addInfoBox(myId, myTitle, myCategory, undefined, undefined, undefined, event);
                       });
 
                     
