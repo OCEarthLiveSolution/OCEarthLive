@@ -116,7 +116,6 @@
                 //var layerr = '{"name":"VIIRS_SNPP_CorrectedReflectance_TrueColor","serviceUrl":"http://map1.vis.earthdata.nasa.gov/wmts-geo/wmts.cgi","serviceTypeId":"WMTS_1_0_0","parameters":[{"TILEMATRIXSET":"EPSG4326_250m","FORMAT":"image/jpeg"}]}'
                 //var locationn = '{"date":"2016-04-19T13:45:00Z","type":"Point","coordinates":[-78.187222222222,33.9975]}'
                 //showMap(encodeURIComponent(layerr),encodeURIComponent(locationn))
-
                 showMap(encodeURIComponent(JSON.stringify(tempEvent.layers[0])),encodeURIComponent(JSON.stringify(tempEvent.geometries[0])))
 
             }
@@ -175,17 +174,18 @@
                 })
                 .done(function (data) {
                     $.each(data.events, function (key, event) {
-
+                        var tempEvent
                         $.getJSON( server + "/layers/" + event.categories[0].id )
                                 .done(function( data ) {
                                     var layers = data['categories'][0]['layers'];
                                     event.layers=layers
+                                    tempEvent=event
+
                                 });
 
                         var myId = event.id;
                         var myTitle = event.title;
                         var myCategory = event.categories[0].title;
-                        var tempEvent = event
                         if (event.geometries[0].type == 'Point') {
 
                             var myPoint = {};
@@ -234,7 +234,6 @@
 
                             google.maps.event.addListener(bermudaTriangle, 'click', function (event) {
                                 addInfoBox(myId, myTitle, myCategory, undefined, undefined, event, tempEvent);
-                                console.log(tempEvent)
                             });
 
 
