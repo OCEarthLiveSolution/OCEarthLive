@@ -151,21 +151,29 @@ class SQLDump(TweetConsumer):
         self.__session = DBSession().session()
 
     def _save(self, tweet, hashtag=None):
-        
+
         # Obtain the event from the database.
         event = self.__session.query(DBEONet).filter(DBEONet.hashtag == hashtag).one_or_none()
-        
+
         # No need to continue if the tweet is already in the database.
         db_tweet = self.__session.query(DBTweets).filter(DBTweets.tweet_id == tweet.id_str).one_or_none()
         if db_tweet is not None:
             return
-        
+
         # the data fields to save.
         name = tweet.user.name
         create_date = tweet.created_at
         place = tweet.place.name if tweet.place else None
         text = tweet.text
-        
+        profile_pic = tweet.user.profile_image_url
+        screen_name = tweet.user.screen_name
+        try:
+            tweet.extended_entities
+        except AttributeError:
+            media_url = None
+        else:
+            media_url = tweet.extended_entities['media'][0]['media_url'] if tweet.extended_entities['media'] and tweet.extended_entities['media'][0]['type'] == 'photo' else None
+
         # The coordinates is a list that must be saved as a string.  However
         # the list needs to be reconstituted when it's read.  The clients
         # consuming the REST API need the JSON version of the coordinates.
@@ -180,6 +188,10 @@ class SQLDump(TweetConsumer):
                                 place=place,
                                 msg=text,
                                 coordinates=coordinates.encode(),
+                                hashtag=hashtag,
+                                media_url=media_url,
+                                screen_name=screen_name,
+                                profile_pic=profile_pic,
                                 json_coordinates=json_coordinates)
         self.__session.add(tweet_record)
         self.__session.commit()
@@ -189,5 +201,6 @@ class SQLDump(TweetConsumer):
         text = text.encode('utf8', 'replace')
         name = name.encode('utf8', 'replace')
         place = place.encode('utf8', 'replace') if place else None
-        print('Saved to the database: (Name: %s)(Place: %s)(At: %s) %s.' %
-              (name, place, create_date, text))
+        media_url = media_url.encode('utf8', 'replace') if media_url else None
+        print('Saved to the database: (Name: %s)(Place: %s)(At: %s) %s %s.' %
+              (name, place, create_date, text, media_url))

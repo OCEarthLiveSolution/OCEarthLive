@@ -17,6 +17,8 @@ SETTINGS = {
     'DEBUG': True,
     'X_DOMAINS': '*',
     'SQLALCHEMY_DATABASE_URI': 'sqlite:////tmp/tweets.db',
+    'XML': False,
+    'JSON': True,
     'DOMAIN': {
         'tweets': DBTweets._eve_schema['tweets'],
         

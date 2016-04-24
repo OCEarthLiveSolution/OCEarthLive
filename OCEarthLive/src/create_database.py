@@ -37,6 +37,10 @@ with con:
             msg TEXT,
             coordinates BLOB,
             json_coordinates TEXT,
+            hashtag TEXT,
+            media_url TEXT,
+            screen_name TEXT,
+            profile_pic TEXT,
             FOREIGN KEY(eonet_id) REFERENCES EONet(eonet_id)
         )''')
     
