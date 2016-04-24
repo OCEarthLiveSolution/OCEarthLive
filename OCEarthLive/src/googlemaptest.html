@@ -40,6 +40,16 @@
                 size: new google.maps.Size(150, 50)
         });
 
+        function getPinImage(pinColor){
+            console.log(pinColor);
+            var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
+            new google.maps.Size(21, 34),
+            new google.maps.Point(0,0),
+            new google.maps.Point(10, 34));
+
+            return pinImage;
+        }
+
         function addInfoBox(myId, myTitle, myCategory, event){
             
             var contentString = "";
@@ -74,25 +84,15 @@
             var myId = JSON.stringify(event.eonet_id);
             var myTitle = JSON.stringify(event.name);
 
-            console.log(myId);
-            console.log(myTitle);
-            console.log(JSON.parse(event.json_coordinates).coordinates);
-            
             var myPoint = {};
             myPoint.lat = parseFloat(JSON.parse(event.json_coordinates).coordinates[1]);
             myPoint.lng = parseFloat(JSON.parse(event.json_coordinates).coordinates[0]);
             
-            var pinColor = "00FFFF";
-          var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
-        new google.maps.Size(21, 34),
-        new google.maps.Point(0,0),
-        new google.maps.Point(10, 34));
-
             var marker = new google.maps.Marker({
                 position: myPoint,
                 map: map,
                 title: myTitle,
-                icon: pinImage
+                icon: getPinImage("00FFFF")
               });
 
             google.maps.event.addListener(marker, 'click', function(event) {
@@ -126,7 +126,8 @@
                       var marker = new google.maps.Marker({
                           position: myPoint,
                           map: map,
-                          title: myTitle
+                          title: myTitle,
+                          icon: getPinImage("FF0000")
                         });
 
                       google.maps.event.addListener(marker, 'click', function(event) {
