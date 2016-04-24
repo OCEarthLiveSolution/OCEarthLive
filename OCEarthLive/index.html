@@ -4,7 +4,7 @@
     <title>OC Earth Live</title>
 
     <meta name="viewport" content="initial-scale=1.0">
-    <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
 
     <!-- OpenLayers -->
     <script src="http://openlayers.org/en/v3.8.2/build/ol.js" type="text/javascript"></script>
@@ -74,30 +74,42 @@
 
 
         /* accepts parameters
-       * h  Object = {h:x, s:y, v:z}
-       * OR 
-       * h, s, v
-      */
-      function HSVtoHEX(h, s, v) {
-          var r, g, b, i, f, p, q, t;
-          if (arguments.length === 1) {
-              s = h.s, v = h.v, h = h.h;
-          }
-          i = Math.floor(h * 6);
-          f = h * 6 - i;
-          p = v * (1 - s);
-          q = v * (1 - f * s);
-          t = v * (1 - (1 - f) * s);
-          switch (i % 6) {
-              case 0: r = v, g = t, b = p; break;
-              case 1: r = q, g = v, b = p; break;
-              case 2: r = p, g = v, b = t; break;
-              case 3: r = p, g = q, b = v; break;
-              case 4: r = t, g = p, b = v; break;
-              case 5: r = v, g = p, b = q; break;
-          }
-          return rgbToHex(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255));
-      }
+         * h  Object = {h:x, s:y, v:z}
+         * OR
+         * h, s, v
+         */
+        function HSVtoHEX(h, s, v) {
+            var r, g, b, i, f, p, q, t;
+            if (arguments.length === 1) {
+                s = h.s, v = h.v, h = h.h;
+            }
+            i = Math.floor(h * 6);
+            f = h * 6 - i;
+            p = v * (1 - s);
+            q = v * (1 - f * s);
+            t = v * (1 - (1 - f) * s);
+            switch (i % 6) {
+                case 0:
+                    r = v, g = t, b = p;
+                    break;
+                case 1:
+                    r = q, g = v, b = p;
+                    break;
+                case 2:
+                    r = p, g = v, b = t;
+                    break;
+                case 3:
+                    r = p, g = q, b = v;
+                    break;
+                case 4:
+                    r = t, g = p, b = v;
+                    break;
+                case 5:
+                    r = v, g = p, b = q;
+                    break;
+            }
+            return rgbToHex(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255));
+        }
 
 
         function rgbToHex(r, g, b) {
@@ -113,7 +125,7 @@
             return pinImage;
         }
 
-        function getCategoryIcon(category){
+        function getCategoryIcon(category) {
 
             var day;
 
@@ -174,7 +186,15 @@
 
             google.maps.event.addListener(infowindow, 'domready', function () {
                 twttr.widgets.load();
-                showMap(encodeURIComponent(JSON.stringify(tempEvent.layers[24])), encodeURIComponent(JSON.stringify(tempEvent.geometries[0])))
+                if (tempEvent!==undefined)
+                if (tempEvent.layers[tempEvent.layers.length-1].serviceTypeId === "WMTS_1_0_0")
+                showMap(encodeURIComponent(JSON.stringify(tempEvent.layers[tempEvent.layers.length-1])), encodeURIComponent(JSON.stringify(tempEvent.geometries[0])))
+                else
+                {
+                    var asd = tempEvent.layers.length-1;
+                    while (tempEvent.layers[asd].serviceTypeId === "WMS_1_1_1" && asd>0){asd--;console.log('decreased')}
+                    showMap(encodeURIComponent(JSON.stringify(tempEvent.layers[asd])), encodeURIComponent(JSON.stringify(tempEvent.geometries[0])))
+                }
 
             });
 
@@ -192,10 +212,10 @@
                 contentString += "<br/>Event: " + title;
             }
             if (category != undefined) {
-                contentString += "<br/> <span class=\"fa "+ getCategoryIcon(category) +"\"> "+ "</span><b>" + category + "</b>";
+                contentString += "<br/> <span class=\"fa " + getCategoryIcon(category) + "\"> " + "</span><b>" + category + "</b>";
                 //This is the NASA EONET Data so, we can tweet about it
                 contentString += "<br/><a href=\"https://twitter.com/intent/tweet?button_hashtag=" + id + "&text=" + title + " #" + category + "\" class=\"twitter-hashtag-button\"></a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');<\/script>";
-                contentString += '<br/><div id="map22" class="map22"></div><br/>';
+                contentString += '<br/><div id="map2" class="map2"></div><br/>';
 
                 // Fixed data for test
                 //var layerr = '{"name":"VIIRS_SNPP_CorrectedReflectance_TrueColor","serviceUrl":"http://map1.vis.earthdata.nasa.gov/wmts-geo/wmts.cgi","serviceTypeId":"WMTS_1_0_0","parameters":[{"TILEMATRIXSET":"EPSG4326_250m","FORMAT":"image/jpeg"}]}'
@@ -265,81 +285,80 @@
                                     var layers = data['categories'][0]['layers'];
                                     event.layers = layers
                                     tempEvent = event
+
+
+                                    var myId = event.id;
+                                    var myTitle = event.title;
+                                    var myCategory = event.categories[0].title;
+
+                                    var numPoints = event.geometries.length;
+
+                                    for (var i = 0; i < numPoints; i++) {
+
+                                        if (event.geometries[i].type == 'Point') {
+
+                                            var myPoint = {};
+                                            myPoint.lat = parseFloat(event.geometries[i].coordinates[1]);
+                                            myPoint.lng = parseFloat(event.geometries[i].coordinates[0]);
+
+                                            //console.log(JSON.stringify(event.categories[0].title));
+                                            var pinIcon;
+                                            if (i == numPoints - 1) {
+                                                pinIcon = getPinImage(HSVtoHEX(0, 1, 1));
+                                            }
+                                            else {
+                                                pinIcon = getPinImage(HSVtoHEX(0, 0.5 * i / numPoints, 1));
+                                            }
+
+                                            var marker = new google.maps.Marker({
+                                                position: myPoint,
+                                                map: map,
+                                                title: myTitle,
+                                                icon: pinIcon
+                                            });
+                                            google.maps.event.addListener(marker, 'click', function (event) {
+                                                addInfoBox(myId, myTitle, myCategory, undefined, undefined, event, tempEvent);
+                                            });
+
+                                            marker.setMap(map);
+                                        }
+
+                                        else if (event.geometries[i].type == 'Polygon') {
+
+                                            var allPolygons = event.geometries[0].coordinates[0];
+
+                                            var triangleCoords = [];
+
+                                            $.each(allPolygons, function (index, value) {
+                                                var coord = {lat: value[1], lng: value[0]};
+                                                triangleCoords.push(coord);
+
+                                            });
+
+                                            // console.log(JSON.stringify(event.categories[0].title));
+
+                                            // Construct the polygon.
+                                            var bermudaTriangle = new google.maps.Polygon({
+                                                paths: triangleCoords,
+                                                strokeColor: '#FF0000',
+                                                strokeOpacity: 0.8,
+                                                strokeWeight: 2,
+                                                fillColor: '#FF0000',
+                                                fillOpacity: 0.35,
+                                                title: myTitle
+                                            });
+
+                                            google.maps.event.addListener(bermudaTriangle, 'click', function (event) {
+                                                addInfoBox(myId, myTitle, myCategory, undefined, undefined, event, tempEvent);
+                                            });
+
+
+                                            bermudaTriangle.setMap(map);
+
+                                        }
+
+                                    }
                                 });
-
-
-                        var myId = event.id;
-                        var myTitle = event.title;
-                        var myCategory = event.categories[0].title;
-
-                        var numPoints = event.geometries.length;
-                        
-                        for (var i=0; i< numPoints; i++){
-
-                            if (event.geometries[i].type == 'Point') {
-
-                                var myPoint = {};
-                                myPoint.lat = parseFloat(event.geometries[i].coordinates[1]);
-                                myPoint.lng = parseFloat(event.geometries[i].coordinates[0]);
-
-                                //console.log(JSON.stringify(event.categories[0].title));
-                                var pinIcon;
-                                if (i == numPoints -1 ){
-                                    pinIcon = getPinImage(HSVtoHEX(0,1,1));     
-                                }
-                                else{
-                                    pinIcon = getPinImage(HSVtoHEX(0,0.5*i/numPoints,1));     
-                                }
-
-                                var marker = new google.maps.Marker({
-                                    position: myPoint,
-                                    map: map,
-                                    title: myTitle,
-                                    icon: pinIcon
-                                });
-                                google.maps.event.addListener(marker, 'click', function (event) {
-                                    addInfoBox(myId, myTitle, myCategory, undefined, undefined, event, tempEvent);
-                                });
-
-                                marker.setMap(map);
-                            }
-
-                            else if (event.geometries[i].type == 'Polygon') {
-
-                                var allPolygons = event.geometries[0].coordinates[0];
-
-                                var triangleCoords = [];
-
-                                $.each(allPolygons, function (index, value) {
-                                    var coord = {lat: value[1], lng: value[0]};
-                                    triangleCoords.push(coord);
-
-                                });
-
-                                // console.log(JSON.stringify(event.categories[0].title));
-
-                                // Construct the polygon.
-                                var bermudaTriangle = new google.maps.Polygon({
-                                    paths: triangleCoords,
-                                    strokeColor: '#FF0000',
-                                    strokeOpacity: 0.8,
-                                    strokeWeight: 2,
-                                    fillColor: '#FF0000',
-                                    fillOpacity: 0.35,
-                                    title: myTitle
-                                });
-
-                                google.maps.event.addListener(bermudaTriangle, 'click', function (event) {
-                                    addInfoBox(myId, myTitle, myCategory, undefined, undefined, event, tempEvent);
-                                });
-
-
-                                bermudaTriangle.setMap(map);
-
-                            }
-
-                        }
-
                     });
                 });
     }
