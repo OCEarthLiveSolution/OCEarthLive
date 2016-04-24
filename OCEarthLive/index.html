@@ -81,6 +81,57 @@
             return pinImage;
         }
 
+        function getCategoryIcon(category){
+
+            var day;
+
+            switch (category) {
+                case "Drought":
+                    day = "fa-flag";
+                    break;
+                case "Dust and Haze":
+                    day = "fa-exclamation-triangle";
+                    break;
+                case "Earthquakes":
+                    day = "fa-globe";
+                    break;
+                case "Floods":
+                    day = "fa-umbrella";
+                    break;
+                case "Landslides":
+                    day = "fa-image";
+                    break;
+                case "Manmade":
+                    day = "fa-male";
+                    break;
+                case "Sea and Lake Ice":
+                    day = "fa-asterisk";
+                    break;
+                case "Severe Storms":
+                    day = "fa-bolt";
+                    break;
+                case "Snow":
+                    day = "fa-ge";
+                    break;
+                case "Temperature Extremes":
+                    day = "fa-sun-o";
+                    break;
+                case "Volcanoes":
+                    day = "fa-viacoin";
+                    break;
+                case "Water Color":
+                    day = "fa-krw";
+                    break;
+                case "Wildfires":
+                    day = "fa-fire";
+                    break;
+            }
+
+            return day;
+
+        }
+
+
         function addInfoBox(id, title, category, tweet, image, event, tempEvent) {
 
             var contentString = "";
@@ -109,7 +160,7 @@
                 contentString += "<br/>Event: " + title;
             }
             if (category != undefined) {
-                contentString += "<br/>Category: " + category;
+                contentString += "<br/> <span class=\"fa "+ getCategoryIcon(category) +"\"> "+ "</span><b>" + category + "</b>";
                 //This is the NASA EONET Data so, we can tweet about it
                 contentString += "<br/><a href=\"https://twitter.com/intent/tweet?button_hashtag=" + id + "&text=" + title + " #" + category + "\" class=\"twitter-hashtag-button\"></a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');<\/script>";
                 contentString += '<br/><div id="map2" class="map2"></div><br/>';
