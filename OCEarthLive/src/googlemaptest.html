@@ -99,7 +99,7 @@
             }
             
             if (id != undefined){
-              contentString += "<br/>#" + id;
+              //contentString += "<br/>#" + id;
             }
             
             if (title != undefined){
@@ -107,6 +107,9 @@
             }
             if (category != undefined){
               contentString += "<br/>Category: " + category ;
+              //This is the NASA EONET Data so, we can tweet about it
+              contentString += "<br/><a href=\"https://twitter.com/intent/tweet?button_hashtag="+id +"&text="+title+" #"+category+"\" class=\"twitter-hashtag-button\"></a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');<\/script>" ;
+              
             }
             if (image != undefined || image != null){
               contentString += "<br/><img src=" + image + "/>" ;
@@ -165,9 +168,9 @@
             .done(function( data ) {
                 $.each( data.events, function( key, event ) {
 
-                    var myId = JSON.stringify(event.id);
-                    var myTitle = JSON.stringify(event.title);
-                    var myCategory = JSON.stringify(event.categories[0].title);
+                    var myId = event.id;
+                    var myTitle = event.title;
+                    var myCategory = event.categories[0].title;
                     
                     if (event.geometries[0].type == 'Point'){
 
