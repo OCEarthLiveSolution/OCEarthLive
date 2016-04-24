@@ -159,6 +159,12 @@ class EONet(object):
                 # Separation is in degrees, which is converted to miles.
                 if 'POINT' == geotype:
                     deg_separation = point.Distance(ogr_geometry)
+
+                    # The international date line can make points look like
+                    # they're almost 360 degrees apart.
+                    if deg_separation > 180:
+                        deg_separation = 360 - deg_separation
+                    
                     sm_separation = degree_to_mile(deg_separation)
                     if sm_separation < POINT_SEPARATION:
                         return hashtag

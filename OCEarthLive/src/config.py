@@ -8,6 +8,9 @@ import ConfigParser
 config = ConfigParser.ConfigParser()
 config.read('conf')
 
+# This file has the API keys.
+config.read('/home/neil/.apikeys/twitter.keys')
+
 # Twitter access keys and tokens.
 ACCESS_TOKEN = config.get('TWITTER', 'access_token')
 ACCESS_TOKEN_SECRET = config.get('TWITTER', 'access_token_secret')

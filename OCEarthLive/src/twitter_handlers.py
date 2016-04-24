@@ -8,6 +8,28 @@ from osgeo import ogr
 from EONet_json import EONet
 from database import DBEONet, DBTweets, DBPhotos, DBSession, PythonDBObject
 
+    
+def place_centroid(tweet):
+    '''
+    Returns the centroid of the bounding box of the place of the tweet.
+    '''
+    # If no location data at all, return None.
+    geometry = tweet.place.bounding_box if tweet.place else None
+    if geometry is None:
+        return None
+    
+    # Build a geometry dictionary.  The first point needs to be added to
+    # the end to form a closed figure.
+    first_point = geometry.coordinates[0][0]
+    geometry.coordinates[0].append(first_point)
+    polygon = {u'type': 'Polygon', u'coordinates': geometry.coordinates}
+    
+    # Create an OGR polygon and calculate the centroid.
+    json_geometry = json.dumps(polygon)
+    ogr_geometry = ogr.CreateGeometryFromJson(json_geometry)
+    centroid_point = ogr_geometry.Centroid()
+    return centroid_point
+
 
 class TweetConsumer(object):
     '''
@@ -23,38 +45,6 @@ class TweetConsumer(object):
     # More output to standard out if this is True.  Should be off for the
     # search because that returns so much.  For streaming it's helpful.
     verbose = False
-    
-    def __is_close(self, p1, p2):
-        '''
-        Determines if the points p1 and p2 are close enough to qualify as a
-        match.  Currently not supported.
-        '''
-        separation = p1.Distance(p2) 
-        return False
-    
-    def __centroid(self, tweet):
-        '''
-        Returns the centroid of the bounding box of the place of the tweet.
-        '''
-        geometry = tweet.place.bounding_box if tweet.place else None
-        if geometry is None:
-            return None
-        
-        return None
-        # Use the first for now.
-
-#        # Make the geometry dictionary.
-#        first_point = geometry.coordinates[0][0]
-#        geometry.coordinates.append(first_point)
-#        point = {u'type': 'Point', u'coordinates': geometry.coordinates}
-#        return point
-#        
-#        
-#        json_geometry = json.dumps(poly)
-#        ogr_geometry = ogr.CreateGeometryFromJson(json_geometry)
-#        centroid_point = ogr_geometry.Centroid()
-#        return centroid_point
-        
 
     def __in_polygons(self, point):
         '''
@@ -81,12 +71,9 @@ class TweetConsumer(object):
             hashtag = self.__in_polygons(point)
             
         else:
-            point = self.__centroid(tweet)
+            point = place_centroid(tweet)
             if point is not None:
                 hashtag = self.__in_polygons(point)
-            
-#        elif self.verbose:
-#            print('Rejected.  No geolocation data in tweet.')
             
         if hashtag is not None:
             self.geo_matches += 1
@@ -173,13 +160,26 @@ class SQLDump(TweetConsumer):
             media_url = None
         else:
             media_url = tweet.extended_entities['media'][0]['media_url'] if tweet.extended_entities['media'] and tweet.extended_entities['media'][0]['type'] == 'photo' else None
-
+            
+        # The coordinates of the tweet are either the specific long, lat
+        # provided in the tweet, or the centroid of the place's bounding
+        # box.
+        # 
         # The coordinates is a list that must be saved as a string.  However
         # the list needs to be reconstituted when it's read.  The clients
         # consuming the REST API need the JSON version of the coordinates.
-        coordinates = PythonDBObject(tweet.coordinates)
-        json_coordinates = json.dumps(tweet.coordinates)
+        if tweet.coordinates is not None:
+            coordinates = PythonDBObject(tweet.coordinates)
+            json_coordinates = json.dumps(tweet.coordinates)
+        else:
+            center = place_centroid(tweet)
             
+            # Build the dictionary.
+            l_coords = [center.GetX(), center.GetY()]
+            d_coords = {u'type': 'Point', u'coordinates': l_coords}
+            coordinates = PythonDBObject(d_coords)
+            json_coordinates = json.dumps(d_coords)
+
         # Commit to the database.
         tweet_record = DBTweets(tweet_id=tweet.id_str,
                                 eonet_id=event.eonet_id,
@@ -202,5 +202,5 @@ class SQLDump(TweetConsumer):
         name = name.encode('utf8', 'replace')
         place = place.encode('utf8', 'replace') if place else None
         media_url = media_url.encode('utf8', 'replace') if media_url else None
-        print('Saved to the database: (Name: %s)(Place: %s)(At: %s) %s %s.' %
+        print('Written to the database: [Name: %s][Place: %s][At: %s] %s %s.' %
               (name, place, create_date, text, media_url))
