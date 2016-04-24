@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OC Earth Live</title>
+
+    <meta name="viewport" content="initial-scale=1.0">
+    <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+
+    <!-- OpenLayers -->
+    <script src="http://openlayers.org/en/v3.8.2/build/ol.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="http://openlayers.org/en/v3.8.2/css/ol.css" type="text/css">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+
+    <script>window.twttr = (function (d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0],
+                t = window.twttr || {};
+        if (d.getElementById(id)) return t;
+        js = d.createElement(s);
+        js.id = id;
+        js.src = "https://platform.twitter.com/widgets.js";
+        fjs.parentNode.insertBefore(js, fjs);
+
+        t._e = [];
+        t.ready = function (f) {
+            t._e.push(f);
+        };
+
+        return t;
+    }(document, "script", "twitter-wjs"));</script>
+
+    <meta charset="utf-8">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            height: 100%;
+        }
+
+        .selections {
+            width: 600px;
+            float: left;
+        }
+
+        .map2 {
+            height: 400px;
+            width: 400px;
+            float: left;
+        }
+
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+    var map;
+
+    var server = "http://eonet.sci.gsfc.nasa.gov/api/v2.1";
+
+    var tweetServer = "http://tweet.beawork.com:5000/tweets";
+
+    function initMap() {
+
+        var myLatLng = {lat: 33.697998, lng: -117.846868};
+
+        var map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 3,
+            center: myLatLng
+        });
+
+
+        /* accepts parameters
+       * h  Object = {h:x, s:y, v:z}
+       * OR 
+       * h, s, v
+      */
+      function HSVtoHEX(h, s, v) {
+          var r, g, b, i, f, p, q, t;
+          if (arguments.length === 1) {
+              s = h.s, v = h.v, h = h.h;
+          }
+          i = Math.floor(h * 6);
+          f = h * 6 - i;
+          p = v * (1 - s);
+          q = v * (1 - f * s);
+          t = v * (1 - (1 - f) * s);
+          switch (i % 6) {
+              case 0: r = v, g = t, b = p; break;
+              case 1: r = q, g = v, b = p; break;
+              case 2: r = p, g = v, b = t; break;
+              case 3: r = p, g = q, b = v; break;
+              case 4: r = t, g = p, b = v; break;
+              case 5: r = v, g = p, b = q; break;
+          }
+          return rgbToHex(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255));
+      }
+
+
+        function rgbToHex(r, g, b) {
+            return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+
+        function getPinImage(pinColor) {
+            var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
+                    new google.maps.Size(21, 34),
+                    new google.maps.Point(0, 0),
+                    new google.maps.Point(10, 34));
+
+            return pinImage;
+        }
+
+        function getCategoryIcon(category){
+
+            var day;
+
+            switch (category) {
+                case "Drought":
+                    day = "fa-flag";
+                    break;
+                case "Dust and Haze":
+                    day = "fa-exclamation-triangle";
+                    break;
+                case "Earthquakes":
+                    day = "fa-globe";
+                    break;
+                case "Floods":
+                    day = "fa-umbrella";
+                    break;
+                case "Landslides":
+                    day = "fa-image";
+                    break;
+                case "Manmade":
+                    day = "fa-male";
+                    break;
+                case "Sea and Lake Ice":
+                    day = "fa-asterisk";
+                    break;
+                case "Severe Storms":
+                    day = "fa-bolt";
+                    break;
+                case "Snow":
+                    day = "fa-ge";
+                    break;
+                case "Temperature Extremes":
+                    day = "fa-sun-o";
+                    break;
+                case "Volcanoes":
+                    day = "fa-viacoin";
+                    break;
+                case "Water Color":
+                    day = "fa-krw";
+                    break;
+                case "Wildfires":
+                    day = "fa-fire";
+                    break;
+            }
+
+            return day;
+
+        }
+
+
+        function addInfoBox(id, title, category, tweet, image, event, tempEvent) {
+
+            var contentString = "";
+
+            var infowindow = new google.maps.InfoWindow({
+                size: new google.maps.Size(150, 50)
+            });
+
+            google.maps.event.addListener(infowindow, 'domready', function () {
+                twttr.widgets.load();
+                showMap(encodeURIComponent(JSON.stringify(tempEvent.layers[24])), encodeURIComponent(JSON.stringify(tempEvent.geometries[0])))
+
+            });
+
+            if (tweet != undefined) {
+
+                contentString += "<br/><div class=\"infowindow-content\"><blockquote class=\"twitter-tweet\"><a href=\"" + tweet + "\">" + tweet + "</a></blockquote></div><script src=\"http://platform.twitter.com/widgets.js\"><\/script>";
+
+            }
+
+            if (id != undefined) {
+                //contentString += "<br/>#" + id;
+            }
+
+            if (title != undefined) {
+                contentString += "<br/>Event: " + title;
+            }
+            if (category != undefined) {
+                contentString += "<br/> <span class=\"fa "+ getCategoryIcon(category) +"\"> "+ "</span><b>" + category + "</b>";
+                //This is the NASA EONET Data so, we can tweet about it
+                contentString += "<br/><a href=\"https://twitter.com/intent/tweet?button_hashtag=" + id + "&text=" + title + " #" + category + "\" class=\"twitter-hashtag-button\"></a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');<\/script>";
+                contentString += '<br/><div id="map2" class="map2"></div><br/>';
+
+                // Fixed data for test
+                //var layerr = '{"name":"VIIRS_SNPP_CorrectedReflectance_TrueColor","serviceUrl":"http://map1.vis.earthdata.nasa.gov/wmts-geo/wmts.cgi","serviceTypeId":"WMTS_1_0_0","parameters":[{"TILEMATRIXSET":"EPSG4326_250m","FORMAT":"image/jpeg"}]}'
+                //var locationn = '{"date":"2016-04-19T13:45:00Z","type":"Point","coordinates":[-78.187222222222,33.9975]}'
+                //showMap(encodeURIComponent(layerr),encodeURIComponent(locationn))
+
+            }
+            if (image != undefined || image != null) {
+                contentString += "<br/><img src=" + image + "/>";
+            }
+            if (event != undefined) {
+                contentString += "<br/>Location: " + event.latLng.toUrlValue(6);
+            }
+
+            infowindow.setContent(contentString);
+            infowindow.setPosition(event.latLng);
+            infowindow.open(map);
+
+
+        }
+
+
+        //Get the Tweets from our server
+        $.getJSON(tweetServer, {
+                    status: "open",
+                    limit: 200
+                })
+                .done(function (data) {
+                    $.each(data._items, function (key, event) {
+
+                        var myId = event.eonet_id;
+                        var tweetUser = event.screen_name;
+                        var tweetId = event.tweet_id;
+                        var tweet = "https://twitter.com/" + tweetUser + "/status/" + tweetId;
+                        var image = event.media_url;
+
+                        var myPoint = {};
+                        myPoint.lat = parseFloat(JSON.parse(event.json_coordinates).coordinates[1]);
+                        myPoint.lng = parseFloat(JSON.parse(event.json_coordinates).coordinates[0]);
+
+                        var marker = new google.maps.Marker({
+                            position: myPoint,
+                            map: map,
+                            title: name,
+                            icon: getPinImage("00FFFF")
+                        });
+
+                        google.maps.event.addListener(marker, 'click', function (event) {
+                            addInfoBox(myId, undefined, undefined, tweet, image, event, null);
+                        });
+
+
+                        marker.setMap(map);
+                    });
+                });
+
+        //Get the events from the EONET Server
+        $.getJSON(server + "/events", {
+                    status: "open",
+                    limit: 200
+                })
+                .done(function (data) {
+                    $.each(data.events, function (key, event) {
+                        var tempEvent
+                        $.getJSON(server + "/layers/" + event.categories[0].id)
+                                .done(function (data) {
+                                    var layers = data['categories'][0]['layers'];
+                                    event.layers = layers
+                                    tempEvent = event
+                                });
+
+
+                        var myId = event.id;
+                        var myTitle = event.title;
+                        var myCategory = event.categories[0].title;
+
+                        var numPoints = event.geometries.length;
+                        
+                        for (var i=0; i< numPoints; i++){
+
+                            if (event.geometries[i].type == 'Point') {
+
+                                var myPoint = {};
+                                myPoint.lat = parseFloat(event.geometries[i].coordinates[1]);
+                                myPoint.lng = parseFloat(event.geometries[i].coordinates[0]);
+
+                                //console.log(JSON.stringify(event.categories[0].title));
+                                var pinIcon;
+                                if (i == numPoints -1 ){
+                                    pinIcon = getPinImage(HSVtoHEX(0,1,1));     
+                                }
+                                else{
+                                    pinIcon = getPinImage(HSVtoHEX(0,0.5*i/numPoints,1));     
+                                }
+
+                                var marker = new google.maps.Marker({
+                                    position: myPoint,
+                                    map: map,
+                                    title: myTitle,
+                                    icon: pinIcon
+                                });
+                                google.maps.event.addListener(marker, 'click', function (event) {
+                                    addInfoBox(myId, myTitle, myCategory, undefined, undefined, event, tempEvent);
+                                });
+
+                                marker.setMap(map);
+                            }
+
+                            else if (event.geometries[i].type == 'Polygon') {
+
+                                var allPolygons = event.geometries[0].coordinates[0];
+
+                                var triangleCoords = [];
+
+                                $.each(allPolygons, function (index, value) {
+                                    var coord = {lat: value[1], lng: value[0]};
+                                    triangleCoords.push(coord);
+
+                                });
+
+                                // console.log(JSON.stringify(event.categories[0].title));
+
+                                // Construct the polygon.
+                                var bermudaTriangle = new google.maps.Polygon({
+                                    paths: triangleCoords,
+                                    strokeColor: '#FF0000',
+                                    strokeOpacity: 0.8,
+                                    strokeWeight: 2,
+                                    fillColor: '#FF0000',
+                                    fillOpacity: 0.35,
+                                    title: myTitle
+                                });
+
+                                google.maps.event.addListener(bermudaTriangle, 'click', function (event) {
+                                    addInfoBox(myId, myTitle, myCategory, undefined, undefined, event, tempEvent);
+                                });
+
+
+                                bermudaTriangle.setMap(map);
+
+                            }
+
+                        }
+
+                    });
+                });
+    }
+
+    function showMap(encodedLayer, encodedLocation) {
+        var layer = JSON.parse(decodeURIComponent(encodedLayer));
+        var location = JSON.parse(decodeURIComponent(encodedLocation));
+
+        var center = getCenter(location);
+
+        // quick and dirty way to extract day string from full ISO datetime
+        var map2Time = new Date(location.date).toJSON().substring(0, 10);
+
+        displayMap(layer.serviceUrl, layer.name,
+                center, map2Time,
+                layer.parameters[0].FORMAT, layer.parameters[0].TILEMATRIXSET);
+    }
+
+    function getCenter(geojson) {
+        if (geojson.type == "Point") {
+            return geojson.coordinates;
+        } else if (geojson.type == "Polygon") {
+            /*
+             For this test we are going to compute the center point of the bounding box
+             that encloses the geoJson Polygon.
+
+             Since the Polygon specification consists of an outer ring and then inner holes,
+             we will only compute the center of the first (outer) LinearRing in the Polygon.
+
+             Convert these coordinates to 0-360 to make it easier
+             */
+
+            // use the first point of the first LinearRing as the default for calculations
+            var ullat = geojson.coordinates[0][0][1] + 90;
+            var ullon = geojson.coordinates[0][0][0] + 180;
+            var lrlat = geojson.coordinates[0][0][1] + 90;
+            var lrlon = geojson.coordinates[0][0][0] + 180;
+
+            for (i = 0; i < geojson.coordinates[0].length; i++) {
+
+                // longitudes
+                if (geojson.coordinates[0][i][0] + 180 > ullon) {
+                    ullon = geojson.coordinates[0][i][0] + 180;
+                }
+                if (geojson.coordinates[0][i][0] + 180 < lrlon) {
+                    lrlon = geojson.coordinates[0][i][0] + 180;
+                }
+
+                // latitudes
+                if (geojson.coordinates[0][i][1] + 90 > ullat) {
+                    ullat = geojson.coordinates[0][i][1] + 90;
+                }
+                if (geojson.coordinates[0][i][1] + 90 < lrlat) {
+                    lrlat = geojson.coordinates[0][i][1] + 90;
+                }
+            }
+
+            centerX = (ullon + ((lrlon - ullon) / 2)) - 180;
+            centerY = (lrlat + ((ullat - lrlat) / 2)) - 90;
+
+            return [centerX, centerY];
+        }
+    }
+
+    function displayMap(serviceUrl, layerName, center, dateStr, format, matrixSet) {
+        // call empty() to make sure another map2 doesn't already exist there
+        $("#map2").empty();
+
+        var map2 = new ol.Map({
+            view: new ol.View({
+                maxResolution: 0.5625,
+                projection: ol.proj.get("EPSG:4326"),
+                extent: [-180, -90, 180, 90],
+                center: center,
+                zoom: 3,
+                maxZoom: 8
+            }),
+            target: "map2",
+            renderer: ["canvas", "dom"]
+        });
+
+        /*
+         This determination of resolutions is based solely on the capabilities
+         of the NASA GIBS WMTS as it is currently the only WMTS server represented
+         in EONET. More information about GIBS: http://go.nasa.gov/1GTDj3V
+         */
+        var source = new ol.source.WMTS({
+            url: serviceUrl + "?time=" + dateStr,
+            layer: layerName,
+            format: format,
+            matrixSet: matrixSet,
+            tileGrid: new ol.tilegrid.WMTS({
+                origin: [-180, 90],
+                resolutions: [
+                    0.5625,
+                    0.28125,
+                    0.140625,
+                    0.0703125,
+                    0.03515625,
+                    0.017578125,
+                    0.0087890625,
+                    0.00439453125,
+                    0.002197265625
+                ],
+                matrixIds: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+                tileSize: 512
+            })
+        });
+
+        var layer = new ol.layer.Tile({
+            source: source
+        });
+
+        map2.addLayer(layer);
+    }
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCmYvnjnsFJEJ2ZnL8adoadKRWOD_euQXc&callback=initMap"
+        async defer></script>
+</body>
+</html>
