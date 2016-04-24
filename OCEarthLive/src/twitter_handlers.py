@@ -31,6 +31,30 @@ class TweetConsumer(object):
         '''
         separation = p1.Distance(p2) 
         return False
+    
+    def __centroid(self, tweet):
+        '''
+        Returns the centroid of the bounding box of the place of the tweet.
+        '''
+        geometry = tweet.place.bounding_box if tweet.place else None
+        if geometry is None:
+            return None
+        
+        return None
+        # Use the first for now.
+
+#        # Make the geometry dictionary.
+#        first_point = geometry.coordinates[0][0]
+#        geometry.coordinates.append(first_point)
+#        point = {u'type': 'Point', u'coordinates': geometry.coordinates}
+#        return point
+#        
+#        
+#        json_geometry = json.dumps(poly)
+#        ogr_geometry = ogr.CreateGeometryFromJson(json_geometry)
+#        centroid_point = ogr_geometry.Centroid()
+#        return centroid_point
+        
 
     def __in_polygons(self, point):
         '''
@@ -48,11 +72,21 @@ class TweetConsumer(object):
         '''
         self.title_matches += 1
         hashtag = None
+        
+        # Use the price coordinates first.  This is a point.
         if tweet.coordinates is not None:
             self.geo_enabled_matches += 1
             geojson_point = json.dumps(tweet.coordinates)
             point = ogr.CreateGeometryFromJson(geojson_point)
             hashtag = self.__in_polygons(point)
+            
+        else:
+            point = self.__centroid(tweet)
+            if point is not None:
+                hashtag = self.__in_polygons(point)
+            
+#        elif self.verbose:
+#            print('Rejected.  No geolocation data in tweet.')
             
         if hashtag is not None:
             self.geo_matches += 1
@@ -75,12 +109,11 @@ class TweetConsumer(object):
         send them to a save method.
         '''
         for tweet in tweets:
+            if self.verbose:
+                print('Tweet: %s.' % tweet.text.encode('utf8', 'replace'))
             hashtag = self.__filter(tweet)
             if hashtag is not None:
                 self._save(tweet, hashtag)
-            elif self.verbose:
-                print('No hashtag found based on geolocation.  Tweet: %s.' %
-                      tweet.text.encode('utf8', 'replace'))
 
 
 # This class is useful for initial development and detailed debugging.
