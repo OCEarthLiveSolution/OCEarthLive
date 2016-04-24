@@ -72,6 +72,38 @@
             center: myLatLng
         });
 
+
+        /* accepts parameters
+       * h  Object = {h:x, s:y, v:z}
+       * OR 
+       * h, s, v
+      */
+      function HSVtoHEX(h, s, v) {
+          var r, g, b, i, f, p, q, t;
+          if (arguments.length === 1) {
+              s = h.s, v = h.v, h = h.h;
+          }
+          i = Math.floor(h * 6);
+          f = h * 6 - i;
+          p = v * (1 - s);
+          q = v * (1 - f * s);
+          t = v * (1 - (1 - f) * s);
+          switch (i % 6) {
+              case 0: r = v, g = t, b = p; break;
+              case 1: r = q, g = v, b = p; break;
+              case 2: r = p, g = v, b = t; break;
+              case 3: r = p, g = q, b = v; break;
+              case 4: r = t, g = p, b = v; break;
+              case 5: r = v, g = p, b = q; break;
+          }
+          return rgbToHex(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255));
+      }
+
+
+        function rgbToHex(r, g, b) {
+            return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+
         function getPinImage(pinColor) {
             var pinImage = new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
                     new google.maps.Size(21, 34),
@@ -251,7 +283,7 @@
                                 position: myPoint,
                                 map: map,
                                 title: myTitle,
-                                icon: getPinImage("FF0000")
+                                icon: getPinImage(HSVtoHEX(0,1,1))
                             });
                             google.maps.event.addListener(marker, 'click', function (event) {
                                 addInfoBox(myId, myTitle, myCategory, undefined, undefined, event, tempEvent);
