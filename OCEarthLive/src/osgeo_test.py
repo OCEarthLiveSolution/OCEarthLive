@@ -47,9 +47,13 @@ anotherjson = """{
                     u'coordinates': [-179.3, -13.0]}, {u'date': u'2016-04-21T12:00:00Z', u'type': u'Point', u'coordinates': [-178.9, -12.7]}, {u'date': u'2016-04-21T18:00:00Z', u'type': u'Point', u'coordinates': [-178.3, -12.7]}, {u'date': u'2016-04-22T00:00:00Z', u'type': u'Point', u'coordinates': [-177.4, -12.4]}, {u'date': u'2016-04-22T06:00:00Z', u'type': u'Point', u'coordinates': [-177.0, -12.5]}"""
 #geojson_point = """{"type":"Point","coordinates":[108420.33,753808.59]}"""
 geojson_point = """{"type":"Point","coordinates":[-95.313,29.787]}"""
+
+
+it = '''{"date": "2016-04-17T00:00:00Z", "type": "Polygon", "coordinates": [[[-78.907470703125, 38.0603639807185], [-78.907470703125, 38.44255951354092], [-78.47412109375, 38.44255951354092], [-78.47412109375, 38.0603639807185], [-78.907470703125, 38.0603639807185]]]}
+'''
 point = ogr.CreateGeometryFromJson(geojson_point)
 poly = ogr.CreateGeometryFromJson(yabba)
-poanothely = ogr.CreateGeometryFromJson(anotherjson)
+poanothely = ogr.CreateGeometryFromJson(it)
 omg = ogr.CreateGeometryFromJson(geojson_poly)
 print "%d,%d" % (point.GetX(), point.GetY())
 #if point.Within(poly):
